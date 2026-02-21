@@ -32,7 +32,7 @@ export function Navbar({ username, avatarUrl, bikeModel, userId }: NavbarProps) 
         <div className="flex items-center gap-4">
           <Link href="/dashboard" className="flex items-center gap-2 font-bold text-lg">
             <Bike className="w-5 h-5" />
-            MotoBuddy
+            MotoBuddies
           </Link>
           <Link
             href="/dashboard"

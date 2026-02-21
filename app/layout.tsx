@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "MotoBuddy",
+  title: "MotoBuddies",
   description: "Organizza giri in moto con il tuo gruppo",
 }
 

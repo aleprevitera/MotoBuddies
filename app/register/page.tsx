@@ -84,14 +84,14 @@ export default function RegisterPage() {
           <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground">
             <Bike className="w-6 h-6" />
           </div>
-          <h1 className="text-2xl font-bold">MotoBuddy</h1>
+          <h1 className="text-2xl font-bold">MotoBuddies</h1>
           <p className="text-muted-foreground text-sm">Organizza i tuoi giri in moto</p>
         </div>
 
         <Card>
           <CardHeader>
             <CardTitle>Crea un account</CardTitle>
-            <CardDescription>Unisciti a MotoBuddy gratuitamente</CardDescription>
+            <CardDescription>Unisciti a MotoBuddies gratuitamente</CardDescription>
           </CardHeader>
           <form onSubmit={handleRegister}>
             <CardContent className="space-y-4">

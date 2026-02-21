@@ -108,7 +108,7 @@ export default function OnboardingPage() {
           <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground">
             <Bike className="w-6 h-6" />
           </div>
-          <h1 className="text-2xl font-bold">Benvenuto su MotoBuddy!</h1>
+          <h1 className="text-2xl font-bold">Benvenuto su MotoBuddies!</h1>
           <p className="text-muted-foreground text-sm text-center">
             Inizia creando un gruppo o unendoti a uno esistente
           </p>

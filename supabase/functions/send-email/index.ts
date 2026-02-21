@@ -78,7 +78,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "MotoBuddy <noreply@yourdomain.com>",
+        from: "MotoBuddies <noreply@yourdomain.com>",
         to: [email],
         subject: payload.record.title,
         html: `
@@ -94,7 +94,7 @@ serve(async (req) => {
                 : ""
             }
             <p style="color: #999; font-size: 12px; margin-top: 32px;">
-              — MotoBuddy
+              — MotoBuddies
             </p>
           </div>
         `,

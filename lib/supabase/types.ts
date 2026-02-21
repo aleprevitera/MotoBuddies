@@ -170,6 +170,40 @@ export type Database = {
           }
         ]
       }
+      notifications: {
+        Row: {
+          id: string
+          user_id: string
+          type: "new_ride" | "ride_reminder" | "new_member" | "ride_rsvp"
+          title: string
+          body: string
+          link: string | null
+          read: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          type: "new_ride" | "ride_reminder" | "new_member" | "ride_rsvp"
+          title: string
+          body: string
+          link?: string | null
+          read?: boolean
+          created_at?: string
+        }
+        Update: {
+          read?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>

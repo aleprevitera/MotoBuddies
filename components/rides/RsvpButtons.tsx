@@ -6,12 +6,15 @@ import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { CheckCircle, HelpCircle, XCircle } from "lucide-react"
+import { notifyRideCreator } from "@/lib/notifications"
 
 type RsvpStatus = "attending" | "maybe" | "declined"
 
 interface RsvpButtonsProps {
   rideId: string
   userId: string
+  username: string
+  rideTitle: string
   currentStatus: RsvpStatus | null
 }
 
@@ -33,7 +36,7 @@ const statusConfig = {
   },
 } as const
 
-export function RsvpButtons({ rideId, userId, currentStatus }: RsvpButtonsProps) {
+export function RsvpButtons({ rideId, userId, username, rideTitle, currentStatus }: RsvpButtonsProps) {
   const router = useRouter()
   const [status, setStatus] = useState<RsvpStatus | null>(currentStatus)
   const [loading, setLoading] = useState(false)
@@ -72,6 +75,20 @@ export function RsvpButtons({ rideId, userId, currentStatus }: RsvpButtonsProps)
       } else {
         setStatus(newStatus)
         toast.success(statusConfig[newStatus].label + "!")
+
+        // Notifica al creatore del giro
+        if (newStatus === "attending" || newStatus === "maybe") {
+          const label = newStatus === "attending" ? "parteciperà" : "forse parteciperà"
+          notifyRideCreator(
+            rideId,
+            userId,
+            "ride_rsvp",
+            "Nuova risposta RSVP",
+            `${username} ${label} a "${rideTitle}"`,
+            `/rides/${rideId}`
+          )
+        }
+
         router.refresh()
       }
     }

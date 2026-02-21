@@ -22,7 +22,7 @@ export default async function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar username={profile.username} avatarUrl={profile.avatar_url} bikeModel={profile.bike_model} />
+      <Navbar username={profile.username} avatarUrl={profile.avatar_url} bikeModel={profile.bike_model} userId={user.id} />
 
       <main className="max-w-2xl mx-auto px-4 py-8">
         <Link

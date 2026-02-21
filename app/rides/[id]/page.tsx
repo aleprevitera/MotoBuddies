@@ -108,7 +108,7 @@ export default async function RidePage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar username={currentUsername} avatarUrl={currentAvatarUrl} bikeModel={currentBikeModel} />
+      <Navbar username={currentUsername} avatarUrl={currentAvatarUrl} bikeModel={currentBikeModel} userId={user.id} />
 
       <main className="max-w-4xl mx-auto px-4 py-8">
         {/* Breadcrumb */}
@@ -235,6 +235,8 @@ export default async function RidePage({ params }: { params: Promise<{ id: strin
                   <RsvpButtons
                     rideId={ride.id}
                     userId={user.id}
+                    username={currentUsername ?? "Utente"}
+                    rideTitle={ride.title}
                     currentStatus={myStatus ?? null}
                   />
                 </CardContent>

@@ -234,7 +234,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar username={profile?.username} avatarUrl={profile?.avatar_url} bikeModel={profile?.bike_model} />
+      <Navbar username={profile?.username} avatarUrl={profile?.avatar_url} bikeModel={profile?.bike_model} userId={user.id} />
 
       <main className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
@@ -246,7 +246,7 @@ export default async function DashboardPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <JoinGroupDialog userId={user.id} />
+            <JoinGroupDialog userId={user.id} username={profile?.username ?? "Utente"} />
             <CreateRideDialog groups={groups} userId={user.id} />
           </div>
         </div>

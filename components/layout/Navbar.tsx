@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Avatar } from "@/components/ui/avatar"
+import { NotificationBell } from "@/components/notifications/NotificationBell"
 import { toast } from "sonner"
 import { Bike, LogOut, LayoutDashboard } from "lucide-react"
 
@@ -12,9 +13,10 @@ interface NavbarProps {
   username?: string
   avatarUrl?: string | null
   bikeModel?: string | null
+  userId?: string
 }
 
-export function Navbar({ username, avatarUrl, bikeModel }: NavbarProps) {
+export function Navbar({ username, avatarUrl, bikeModel, userId }: NavbarProps) {
   const router = useRouter()
 
   async function handleLogout() {
@@ -42,6 +44,7 @@ export function Navbar({ username, avatarUrl, bikeModel }: NavbarProps) {
         </div>
 
         <div className="flex items-center gap-3">
+          {userId && <NotificationBell userId={userId} />}
           {username && (
             <Link
               href="/profile"

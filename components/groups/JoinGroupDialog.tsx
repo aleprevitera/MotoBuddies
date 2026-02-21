@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
 import { Plus, LogIn, Users } from "lucide-react"
+import { notifyGroupMembers } from "@/lib/notifications"
 import type { Database } from "@/lib/supabase/types"
 
 type GroupRow = Database["public"]["Tables"]["groups"]["Row"]
@@ -29,9 +30,10 @@ function generateInviteCode(): string {
 
 interface JoinGroupDialogProps {
   userId: string
+  username: string
 }
 
-export function JoinGroupDialog({ userId }: JoinGroupDialogProps) {
+export function JoinGroupDialog({ userId, username }: JoinGroupDialogProps) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -80,6 +82,17 @@ export function JoinGroupDialog({ userId }: JoinGroupDialogProps) {
     }
 
     toast.success(`Ti sei unito a "${group.name}"!`)
+
+    // Notifica ai membri esistenti del gruppo
+    notifyGroupMembers(
+      group.id,
+      userId,
+      "new_member",
+      "Nuovo membro",
+      `${username} si è unito a "${group.name}"`,
+      `/groups/${group.id}`
+    )
+
     reset()
     setOpen(false)
     router.refresh()

@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import { Plus, Upload, MapPin, Search, Loader2, X, Clock, Calendar } from "lucide-react"
+import { notifyGroupMembers } from "@/lib/notifications"
 
 interface NominatimResult {
   place_id: number
@@ -163,7 +164,7 @@ export function CreateRideDialog({ groups, userId }: CreateRideDialogProps) {
       gpxUrl = urlData.publicUrl
     }
 
-    const { error } = await supabase.from("rides").insert({
+    const { data: newRide, error } = await supabase.from("rides").insert({
       group_id: selectedGroup,
       created_by: userId,
       title,
@@ -173,7 +174,7 @@ export function CreateRideDialog({ groups, userId }: CreateRideDialogProps) {
       start_lon: lon,
       meeting_point_name: meetingPointName || null,
       gpx_url: gpxUrl,
-    })
+    }).select("id").single()
 
     if (error) {
       toast.error("Errore nella creazione del giro: " + error.message)
@@ -182,6 +183,18 @@ export function CreateRideDialog({ groups, userId }: CreateRideDialogProps) {
     }
 
     toast.success("Giro creato con successo!")
+
+    // Notifica ai membri del gruppo
+    const groupName = groups.find((g) => g.id === selectedGroup)?.name ?? ""
+    notifyGroupMembers(
+      selectedGroup,
+      userId,
+      "new_ride",
+      "Nuovo giro",
+      `${title} nel gruppo ${groupName}`,
+      `/rides/${newRide.id}`
+    )
+
     resetForm()
     setOpen(false)
     router.refresh()

@@ -7,8 +7,10 @@ import { Avatar } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
-import { Save } from "lucide-react"
+import { Save, Bike } from "lucide-react"
+import { MOTO_BRANDS, parseBikeModel } from "@/lib/brands"
 
 interface ProfileFormProps {
   userId: string
@@ -17,12 +19,22 @@ interface ProfileFormProps {
   initialAvatarUrl: string | null
 }
 
+const NO_BRAND = "__none__"
+
 export function ProfileForm({ userId, initialUsername, initialBikeModel, initialAvatarUrl }: ProfileFormProps) {
+  const parsed = parseBikeModel(initialBikeModel)
   const [username, setUsername] = useState(initialUsername)
-  const [bikeModel, setBikeModel] = useState(initialBikeModel ?? "")
+  const [brand, setBrand] = useState(parsed.brand || NO_BRAND)
+  const [model, setModel] = useState(parsed.model)
   const [avatarUrl, setAvatarUrl] = useState(initialAvatarUrl ?? "")
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+
+  const bikeModelFull = brand && brand !== NO_BRAND
+    ? `${brand}${model ? ` ${model}` : ""}`
+    : model || null
+
+  const selectedBrand = MOTO_BRANDS.find((b) => b.name === brand)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -39,7 +51,7 @@ export function ProfileForm({ userId, initialUsername, initialBikeModel, initial
       .from("profiles")
       .update({
         username: username.trim(),
-        bike_model: bikeModel.trim() || null,
+        bike_model: bikeModelFull,
         avatar_url: avatarUrl.trim() || null,
       })
       .eq("id", userId)
@@ -62,11 +74,17 @@ export function ProfileForm({ userId, initialUsername, initialBikeModel, initial
         <Avatar
           username={username || "?"}
           avatarUrl={avatarUrl || null}
+          bikeModel={bikeModelFull}
           size="lg"
         />
         <div>
           <p className="text-sm font-medium">{username || "Nome utente"}</p>
-          {bikeModel && <p className="text-xs text-muted-foreground">{bikeModel}</p>}
+          {bikeModelFull && (
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <Bike className="w-3 h-3" />
+              {bikeModelFull}
+            </p>
+          )}
         </div>
       </div>
 
@@ -82,19 +100,51 @@ export function ProfileForm({ userId, initialUsername, initialBikeModel, initial
           />
         </div>
 
+        {/* Brand + Modello moto */}
         <div className="space-y-2">
-          <Label htmlFor="bikeModel">Modello moto</Label>
-          <Input
-            id="bikeModel"
-            value={bikeModel}
-            onChange={(e) => setBikeModel(e.target.value)}
-            placeholder="es. Yamaha MT-07"
-          />
-          <p className="text-xs text-muted-foreground">Visibile agli altri membri del gruppo</p>
+          <Label>La tua moto</Label>
+          <div className="grid grid-cols-2 gap-3">
+            <Select value={brand} onValueChange={setBrand}>
+              <SelectTrigger>
+                <SelectValue placeholder="Marca" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NO_BRAND}>Nessuna marca</SelectItem>
+                {MOTO_BRANDS.map((b) => (
+                  <SelectItem key={b.name} value={b.name}>
+                    <span className="flex items-center gap-2">
+                      <img
+                        src={b.logo}
+                        alt={b.name}
+                        className="w-4 h-4 object-contain"
+                      />
+                      {b.name}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              placeholder="Modello (es. MT-07)"
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+            />
+          </div>
+          {selectedBrand && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <img src={selectedBrand.logo} alt={selectedBrand.name} className="w-5 h-5 object-contain" />
+              Il logo {selectedBrand.name} sarà il tuo avatar
+            </div>
+          )}
+          {!selectedBrand && (
+            <p className="text-xs text-muted-foreground">
+              Scegli una marca per usare il suo logo come avatar
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="avatarUrl">URL avatar</Label>
+          <Label htmlFor="avatarUrl">URL avatar personalizzato</Label>
           <Input
             id="avatarUrl"
             type="url"
@@ -103,7 +153,9 @@ export function ProfileForm({ userId, initialUsername, initialBikeModel, initial
             placeholder="https://esempio.com/foto.jpg"
           />
           <p className="text-xs text-muted-foreground">
-            Lascia vuoto per usare l&apos;iniziale colorata
+            {brand && brand !== NO_BRAND
+              ? "Se impostato un brand, il logo ha priorità. Rimuovi la marca per usare questo URL."
+              : "Lascia vuoto per usare l'iniziale colorata"}
           </p>
         </div>
       </div>

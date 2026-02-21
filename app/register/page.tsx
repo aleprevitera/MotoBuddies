@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
@@ -9,14 +8,14 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "sonner"
-import { Bike } from "lucide-react"
+import { Bike, Mail } from "lucide-react"
 
 export default function RegisterPage() {
-  const router = useRouter()
   const [username, setUsername] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
@@ -41,8 +40,41 @@ export default function RegisterPage() {
       return
     }
 
-    toast.success("Registrazione completata!")
-    router.push("/onboarding")
+    setEmailSent(true)
+  }
+
+  if (emailSent) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <div className="w-full max-w-sm">
+          <Card>
+            <CardContent className="flex flex-col items-center text-center pt-8 pb-6 space-y-4">
+              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary/10">
+                <Mail className="w-8 h-8 text-primary" />
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-xl font-bold">Controlla la tua email</h2>
+                <p className="text-sm text-muted-foreground">
+                  Abbiamo inviato un link di conferma a
+                </p>
+                <p className="text-sm font-semibold">{email}</p>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Clicca sul link nell&apos;email per attivare il tuo account, poi torna qui per accedere.
+              </p>
+              <div className="pt-2 w-full space-y-2">
+                <Button asChild className="w-full">
+                  <Link href="/login">Vai al login</Link>
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Non trovi l&apos;email? Controlla la cartella spam.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
   }
 
   return (

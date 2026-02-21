@@ -19,7 +19,7 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
   // Profilo utente corrente
   const { data: profile } = await supabase
     .from("profiles")
-    .select("username, avatar_url")
+    .select("username, avatar_url, bike_model")
     .eq("id", user.id)
     .single()
 
@@ -72,7 +72,7 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar username={profile?.username} avatarUrl={profile?.avatar_url} />
+      <Navbar username={profile?.username} avatarUrl={profile?.avatar_url} bikeModel={profile?.bike_model} />
 
       <main className="max-w-4xl mx-auto px-4 py-8">
         <Link
@@ -148,7 +148,7 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
                 return (
                   <li key={m.user_id} className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      <Avatar username={p.username} avatarUrl={p.avatar_url} size="md" />
+                      <Avatar username={p.username} avatarUrl={p.avatar_url} bikeModel={p.bike_model} size="md" />
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
                           <span className="text-sm font-medium truncate">{p.username}</span>

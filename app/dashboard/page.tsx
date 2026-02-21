@@ -3,10 +3,13 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { Navbar } from "@/components/layout/Navbar"
 import { CreateRideDialog } from "@/components/rides/CreateRideDialog"
-import { Avatar } from "@/components/ui/avatar"
+import { JoinGroupDialog } from "@/components/groups/JoinGroupDialog"
+import { DashboardViews } from "@/components/rides/DashboardViews"
+import { RideCalendar } from "@/components/rides/RideCalendar"
+import { Avatar, getGroupColor } from "@/components/ui/avatar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, MapPin, Users, Bike } from "lucide-react"
+import { Calendar, MapPin, Users, Bike, ArrowRight } from "lucide-react"
 import { format } from "date-fns"
 import { it } from "date-fns/locale"
 
@@ -19,7 +22,7 @@ export default async function DashboardPage() {
   // Profilo utente
   const { data: profile } = await supabase
     .from("profiles")
-    .select("username, avatar_url")
+    .select("username, avatar_url, bike_model")
     .eq("id", user.id)
     .single()
 
@@ -73,17 +76,18 @@ export default async function DashboardPage() {
   const { data: participantProfiles } = participantIds.length > 0
     ? await supabase
         .from("profiles")
-        .select("id, username, avatar_url")
+        .select("id, username, avatar_url, bike_model")
         .in("id", participantIds)
     : { data: [] }
 
-  const profileMap: Record<string, { username: string; avatar_url: string | null }> = {}
+  type ParticipantProfile = { username: string; avatar_url: string | null; bike_model: string | null }
+  const profileMap: Record<string, ParticipantProfile> = {}
   participantProfiles?.forEach((p) => {
-    profileMap[p.id] = { username: p.username, avatar_url: p.avatar_url }
+    profileMap[p.id] = { username: p.username, avatar_url: p.avatar_url, bike_model: p.bike_model }
   })
 
   // Mappa ride_id -> lista profili partecipanti
-  const rideAttendees: Record<string, { username: string; avatar_url: string | null }[]> = {}
+  const rideAttendees: Record<string, ParticipantProfile[]> = {}
   participantsData?.forEach(({ ride_id, user_id }) => {
     if (!rideAttendees[ride_id]) rideAttendees[ride_id] = []
     const p = profileMap[user_id]
@@ -94,124 +98,160 @@ export default async function DashboardPage() {
     .map((m) => m.groups)
     .filter(Boolean) as { id: string; name: string }[]
 
+  // Raggruppa i giri per gruppo
+  const ridesByGroup: Record<string, typeof rides> = {}
+  rides?.forEach((ride) => {
+    if (!ridesByGroup[ride.group_id]) ridesByGroup[ride.group_id] = []
+    ridesByGroup[ride.group_id]!.push(ride)
+  })
+
+  // Mappa group_id -> { name, color } per il calendario
+  const groupInfoMap: Record<string, { name: string; color: ReturnType<typeof getGroupColor> }> = {}
+  memberships.forEach((m) => {
+    const g = m.groups as { id: string; name: string } | null
+    if (g) groupInfoMap[g.id] = { name: g.name, color: getGroupColor(g.id) }
+  })
+
+  // Dati per il calendario
+  const calendarRides = (rides ?? []).map((ride) => {
+    const info = groupInfoMap[ride.group_id]
+    return {
+      id: ride.id,
+      title: ride.title,
+      date_time: ride.date_time,
+      meeting_point_name: ride.meeting_point_name,
+      group_id: ride.group_id,
+      groupName: info?.name ?? "",
+      groupColor: info?.color ?? getGroupColor(ride.group_id),
+    }
+  })
+
+  // Vista lista (server-rendered)
+  const listView = (
+    <div className="space-y-10">
+      {memberships.map((m) => {
+        const g = m.groups as { id: string; name: string; invite_code: string } | null
+        if (!g) return null
+        const color = getGroupColor(g.id)
+        const groupRides = ridesByGroup[g.id] ?? []
+
+        return (
+          <section key={g.id}>
+            <Link href={`/groups/${g.id}`} className="group">
+              <div className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 mb-4 transition-shadow hover:shadow-md ${color.bg} ${color.border}`}>
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`w-3 h-3 rounded-full shrink-0 ${color.dot}`} />
+                  <span className={`font-semibold ${color.text}`}>{g.name}</span>
+                  <Badge variant="outline" className="text-xs font-mono">
+                    {g.invite_code}
+                  </Badge>
+                  {m.role === "admin" && (
+                    <Badge className="text-xs">admin</Badge>
+                  )}
+                </div>
+                <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+              </div>
+            </Link>
+
+            {groupRides.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p className="text-sm">Nessun giro in programma per questo gruppo</p>
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {groupRides.map((ride) => {
+                  const rideDate = new Date(ride.date_time)
+                  const isToday = new Date().toDateString() === rideDate.toDateString()
+
+                  return (
+                    <Link key={ride.id} href={`/rides/${ride.id}`}>
+                      <Card className={`hover:shadow-md transition-shadow cursor-pointer h-full border-l-4 ${color.border}`}>
+                        <CardHeader className="pb-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <CardTitle className="text-base leading-tight">{ride.title}</CardTitle>
+                            {isToday && (
+                              <Badge className="shrink-0 bg-green-500 hover:bg-green-500 text-white">
+                                Oggi
+                              </Badge>
+                            )}
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                            <Calendar className="w-3.5 h-3.5 shrink-0" />
+                            <span>
+                              {format(rideDate, "EEEE d MMMM, HH:mm", { locale: it })}
+                            </span>
+                          </div>
+                          {ride.meeting_point_name && (
+                            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                              <MapPin className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate">{ride.meeting_point_name}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                            {(rideAttendees[ride.id]?.length ?? 0) > 0 ? (
+                              <>
+                                <div className="flex -space-x-1.5">
+                                  {rideAttendees[ride.id].slice(0, 4).map((p) => (
+                                    <Avatar key={p.username} username={p.username} avatarUrl={p.avatar_url} bikeModel={p.bike_model} size="sm" />
+                                  ))}
+                                </div>
+                                <span>{countMap[ride.id]} partecipanti</span>
+                              </>
+                            ) : (
+                              <>
+                                <Users className="w-3.5 h-3.5 shrink-0" />
+                                <span>0 partecipanti</span>
+                              </>
+                            )}
+                          </div>
+                          {ride.description && (
+                            <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                              {ride.description}
+                            </p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  )
+                })}
+              </div>
+            )}
+          </section>
+        )
+      })}
+    </div>
+  )
+
+  const calendarView = (
+    <Card>
+      <CardContent className="pt-6">
+        <RideCalendar rides={calendarRides} />
+      </CardContent>
+    </Card>
+  )
+
   return (
     <div className="min-h-screen bg-background">
-      <Navbar username={profile?.username} avatarUrl={profile?.avatar_url} />
+      <Navbar username={profile?.username} avatarUrl={profile?.avatar_url} bikeModel={profile?.bike_model} />
 
       <main className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold">I prossimi giri</h1>
+            <h1 className="text-2xl font-bold">Dashboard</h1>
             <p className="text-muted-foreground text-sm mt-1">
-              {rides?.length
-                ? `${rides.length} giro${rides.length !== 1 ? "i" : ""} in programma`
-                : "Nessun giro in programma"}
+              {memberships.length} gruppo{memberships.length !== 1 ? "i" : ""} · {rides?.length ?? 0} gir{(rides?.length ?? 0) !== 1 ? "i" : "o"} in programma
             </p>
           </div>
-          <CreateRideDialog groups={groups} userId={user.id} />
+          <div className="flex items-center gap-2">
+            <JoinGroupDialog userId={user.id} />
+            <CreateRideDialog groups={groups} userId={user.id} />
+          </div>
         </div>
 
-        {/* Gruppi info */}
-        <div className="flex flex-wrap gap-2 mb-6">
-          {memberships.map((m) => {
-            const g = m.groups as { id: string; name: string; invite_code: string } | null
-            if (!g) return null
-            return (
-              <Link
-                key={m.group_id}
-                href={`/groups/${g.id}`}
-                className="flex items-center gap-1.5 bg-muted rounded-full px-3 py-1 text-sm hover:bg-muted/80 transition-colors"
-              >
-                <Users className="w-3 h-3" />
-                <span>{g.name}</span>
-                <Badge variant="secondary" className="text-xs font-mono ml-1">
-                  {g.invite_code}
-                </Badge>
-                {m.role === "admin" && (
-                  <Badge className="text-xs ml-0.5">admin</Badge>
-                )}
-              </Link>
-            )
-          })}
-        </div>
-
-        {/* Lista giri */}
-        {!rides || rides.length === 0 ? (
-          <div className="text-center py-24 text-muted-foreground">
-            <Bike className="w-12 h-12 mx-auto mb-4 opacity-30" />
-            <p className="text-lg font-medium mb-1">Nessun giro in programma</p>
-            <p className="text-sm">Crea il primo giro del tuo gruppo!</p>
-          </div>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {rides.map((ride) => {
-              const rideDate = new Date(ride.date_time)
-              const isToday =
-                new Date().toDateString() === rideDate.toDateString()
-              const g = ride.groups as { name: string } | null
-
-              return (
-                <Link key={ride.id} href={`/rides/${ride.id}`}>
-                  <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-                    <CardHeader className="pb-2">
-                      <div className="flex items-start justify-between gap-2">
-                        <CardTitle className="text-base leading-tight">{ride.title}</CardTitle>
-                        {isToday && (
-                          <Badge className="shrink-0 bg-green-500 hover:bg-green-500 text-white">
-                            Oggi
-                          </Badge>
-                        )}
-                      </div>
-                      {g && (
-                        <p className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Users className="w-3 h-3" />
-                          {g.name}
-                        </p>
-                      )}
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <Calendar className="w-3.5 h-3.5 shrink-0" />
-                        <span>
-                          {format(rideDate, "EEEE d MMMM, HH:mm", { locale: it })}
-                        </span>
-                      </div>
-                      {ride.meeting_point_name && (
-                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                          <MapPin className="w-3.5 h-3.5 shrink-0" />
-                          <span className="truncate">{ride.meeting_point_name}</span>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        {(rideAttendees[ride.id]?.length ?? 0) > 0 ? (
-                          <>
-                            <div className="flex -space-x-1.5">
-                              {rideAttendees[ride.id].slice(0, 4).map((p) => (
-                                <Avatar key={p.username} username={p.username} avatarUrl={p.avatar_url} size="sm" />
-                              ))}
-                            </div>
-                            <span>{countMap[ride.id]} partecipanti</span>
-                          </>
-                        ) : (
-                          <>
-                            <Users className="w-3.5 h-3.5 shrink-0" />
-                            <span>0 partecipanti</span>
-                          </>
-                        )}
-                      </div>
-                      {ride.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                          {ride.description}
-                        </p>
-                      )}
-                    </CardContent>
-                  </Card>
-                </Link>
-              )
-            })}
-          </div>
-        )}
+        <DashboardViews listView={listView} calendarView={calendarView} />
       </main>
     </div>
   )

@@ -11,9 +11,10 @@ import { Bike, LogOut, LayoutDashboard } from "lucide-react"
 interface NavbarProps {
   username?: string
   avatarUrl?: string | null
+  bikeModel?: string | null
 }
 
-export function Navbar({ username, avatarUrl }: NavbarProps) {
+export function Navbar({ username, avatarUrl, bikeModel }: NavbarProps) {
   const router = useRouter()
 
   async function handleLogout() {
@@ -46,7 +47,7 @@ export function Navbar({ username, avatarUrl }: NavbarProps) {
               href="/profile"
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
-              <Avatar username={username} avatarUrl={avatarUrl} size="sm" />
+              <Avatar username={username} avatarUrl={avatarUrl} bikeModel={bikeModel} size="sm" />
               <span className="text-sm text-muted-foreground hidden sm:inline">
                 {username}
               </span>

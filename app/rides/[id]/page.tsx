@@ -64,11 +64,13 @@ export default async function RidePage({ params }: { params: Promise<{ id: strin
   // Profilo utente corrente
   const { data: profileData } = await supabase
     .from("profiles")
-    .select("username, avatar_url")
+    .select("username, avatar_url, bike_model")
     .eq("id", user.id)
     .single()
-  const currentUsername = (profileData as Pick<ProfileRow, "username" | "avatar_url"> | null)?.username
-  const currentAvatarUrl = (profileData as Pick<ProfileRow, "username" | "avatar_url"> | null)?.avatar_url
+  const currentProfile = profileData as Pick<ProfileRow, "username" | "avatar_url" | "bike_model"> | null
+  const currentUsername = currentProfile?.username
+  const currentAvatarUrl = currentProfile?.avatar_url
+  const currentBikeModel = currentProfile?.bike_model
 
   // Partecipanti
   const { data: participantsData } = await supabase
@@ -106,7 +108,7 @@ export default async function RidePage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar username={currentUsername} avatarUrl={currentAvatarUrl} />
+      <Navbar username={currentUsername} avatarUrl={currentAvatarUrl} bikeModel={currentBikeModel} />
 
       <main className="max-w-4xl mx-auto px-4 py-8">
         {/* Breadcrumb */}

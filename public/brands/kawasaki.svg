@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="300" height="300" viewBox="0 0 300 300">
+  <defs>
+    <clipPath id="clip-path">
+      <rect id="Rectangle_42" data-name="Rectangle 42" width="199.015" height="199.823" fill="none"/>
+    </clipPath>
+    <clipPath id="clip-kawasaki-logo">
+      <rect width="300" height="300"/>
+    </clipPath>
+  </defs>
+  <g id="kawasaki-logo" clip-path="url(#clip-kawasaki-logo)">
+    <g id="Group_215" data-name="Group 215" transform="translate(50.492 50.089)">
+      <g id="Group_215-2" data-name="Group 215" clip-path="url(#clip-path)">
+        <path id="Path_2194" data-name="Path 2194" d="M65.106,108.152h0V89.3h59.247A100.721,100.721,0,0,0,44.1.7V22.244A79.406,79.406,0,0,1,97.691,68.3H44.1v60.863H97.691A79.777,79.777,0,0,1,44.1,175.478v21.544c43.089-8.348,75.944-44.435,80.252-88.87H65.106" transform="translate(74.663 1.185)"/>
+        <path id="Path_2195" data-name="Path 2195" d="M54.106.539C50.874.269,47.373,0,43.6,0S36.87.269,33.1.539V199.284c3.5.269,7.271.539,10.5.539,2.962,0,6.733-.269,10.5-.539Z" transform="translate(56.039)"/>
+        <path id="Path_2196" data-name="Path 2196" d="M26.661,129.158H80.252V68.3H26.661A79.406,79.406,0,0,1,80.252,22.244V.7C37.433,9.048,4.309,45.135,0,89.3H59.247v18.851H0c4.04,44.166,37.433,80.252,80.252,88.87V175.478a79.777,79.777,0,0,1-53.591-46.32" transform="translate(0 1.185)"/>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -7,6 +7,7 @@ import { GpxMapWrapper } from "@/components/map/GpxMapWrapper"
 import { WeatherWidget } from "@/components/weather/WeatherWidget"
 import { RsvpButtons } from "@/components/rides/RsvpButtons"
 import { RemoveGpxButton } from "@/components/rides/RemoveGpxButton"
+import { DeleteRideButton } from "@/components/rides/DeleteRideButton"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Calendar, MapPin, Users, FileText, Download, ArrowLeft, CheckCircle, HelpCircle, XCircle } from "lucide-react"
@@ -102,14 +103,13 @@ export default async function RidePage({ params }: { params: Promise<{ id: strin
   const myParticipation = participants.find((p) => p.user_id === user.id)
   const myStatus = myParticipation?.status as "attending" | "maybe" | "declined" | undefined
 
-  // Fetch GPX lato server per evitare problemi CORS
+  // Scarica GPX da Supabase Storage lato server (autenticato)
   let gpxData: string | null = null
   if (ride.gpx_url) {
-    try {
-      const gpxRes = await fetch(ride.gpx_url)
-      if (gpxRes.ok) gpxData = await gpxRes.text()
-    } catch {
-      // Se il fetch fallisce, gpxData resta null e si mostra la mappa normale
+    const match = ride.gpx_url.match(/\/gpx-files\/(.+)$/)
+    if (match) {
+      const { data: blob } = await supabase.storage.from("gpx-files").download(match[1])
+      if (blob) gpxData = await blob.text()
     }
   }
 
@@ -139,6 +139,9 @@ export default async function RidePage({ params }: { params: Promise<{ id: strin
           <div className="flex flex-wrap items-start gap-3 mb-2">
             <h1 className="text-3xl font-bold leading-tight">{ride.title}</h1>
             {isPast && <Badge variant="secondary">Passato</Badge>}
+            {isCreator && (
+              <DeleteRideButton rideId={ride.id} gpxUrl={ride.gpx_url} />
+            )}
           </div>
 
           <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mt-3">

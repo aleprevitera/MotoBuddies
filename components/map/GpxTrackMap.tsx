@@ -83,7 +83,7 @@ export function GpxTrackMap({ gpxData, startLat, startLon, label }: GpxTrackMapP
         />
         <Polyline
           positions={parsed.positions}
-          pathOptions={{ color: "hsl(var(--primary))", weight: 4, opacity: 0.8 }}
+          pathOptions={{ color: "#2563eb", weight: 4, opacity: 0.8 }}
         />
         <Marker position={[startLat, startLon]} icon={defaultIcon}>
           {label && <Popup>{label}</Popup>}

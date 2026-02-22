@@ -169,7 +169,7 @@ export function CreateRideDialog({ groups, userId }: CreateRideDialogProps) {
       created_by: userId,
       title,
       description: description || null,
-      date_time: new Date(`${date}T${time}`).toISOString(),
+      date_time: `${date}T${time}:00`,
       start_lat: lat,
       start_lon: lon,
       meeting_point_name: meetingPointName || null,

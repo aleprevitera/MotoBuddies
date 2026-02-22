@@ -6,6 +6,7 @@ import { MapWrapper } from "@/components/map/MapWrapper"
 import { GpxMapWrapper } from "@/components/map/GpxMapWrapper"
 import { WeatherWidget } from "@/components/weather/WeatherWidget"
 import { RsvpButtons } from "@/components/rides/RsvpButtons"
+import { RemoveGpxButton } from "@/components/rides/RemoveGpxButton"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Calendar, MapPin, Users, FileText, Download, ArrowLeft, CheckCircle, HelpCircle, XCircle } from "lucide-react"
@@ -101,6 +102,18 @@ export default async function RidePage({ params }: { params: Promise<{ id: strin
   const myParticipation = participants.find((p) => p.user_id === user.id)
   const myStatus = myParticipation?.status as "attending" | "maybe" | "declined" | undefined
 
+  // Fetch GPX lato server per evitare problemi CORS
+  let gpxData: string | null = null
+  if (ride.gpx_url) {
+    try {
+      const gpxRes = await fetch(ride.gpx_url)
+      if (gpxRes.ok) gpxData = await gpxRes.text()
+    } catch {
+      // Se il fetch fallisce, gpxData resta null e si mostra la mappa normale
+    }
+  }
+
+  const isCreator = user.id === ride.created_by
   const rideDate = new Date(ride.date_time)
   const isPast = rideDate < new Date()
 
@@ -176,13 +189,13 @@ export default async function RidePage({ params }: { params: Promise<{ id: strin
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <MapPin className="w-4 h-4" />
-                  {ride.gpx_url ? "Percorso" : "Punto di ritrovo"}
+                  {gpxData ? "Percorso" : "Punto di ritrovo"}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {ride.gpx_url ? (
+                {gpxData ? (
                   <GpxMapWrapper
-                    gpxUrl={ride.gpx_url}
+                    gpxData={gpxData}
                     startLat={ride.start_lat}
                     startLon={ride.start_lon}
                     label={ride.meeting_point_name ?? "Punto di ritrovo"}
@@ -198,14 +211,19 @@ export default async function RidePage({ params }: { params: Promise<{ id: strin
                   Coordinate: {ride.start_lat.toFixed(5)}, {ride.start_lon.toFixed(5)}
                 </p>
                 {ride.gpx_url && (
-                  <a
-                    href={ride.gpx_url}
-                    download
-                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mt-2 transition-colors"
-                  >
-                    <Download className="w-4 h-4" />
-                    Scarica traccia GPX
-                  </a>
+                  <div className="flex items-center gap-3 mt-2">
+                    <a
+                      href={ride.gpx_url}
+                      download
+                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <Download className="w-4 h-4" />
+                      Scarica traccia GPX
+                    </a>
+                    {isCreator && (
+                      <RemoveGpxButton rideId={ride.id} gpxUrl={ride.gpx_url} />
+                    )}
+                  </div>
                 )}
               </CardContent>
             </Card>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo } from "react"
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
@@ -15,14 +15,8 @@ const defaultIcon = L.icon({
   shadowSize: [41, 41],
 })
 
-interface TrackStats {
-  distance: number // km
-  elevationGain: number
-  elevationLoss: number
-}
-
 interface GpxTrackMapProps {
-  gpxUrl: string
+  gpxData: string
   startLat: number
   startLon: number
   label?: string
@@ -39,73 +33,38 @@ function FitBounds({ positions }: { positions: [number, number][] }) {
   return null
 }
 
-export function GpxTrackMap({ gpxUrl, startLat, startLon, label }: GpxTrackMapProps) {
-  const [positions, setPositions] = useState<[number, number][]>([])
-  const [stats, setStats] = useState<TrackStats | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+function parseGpx(gpxData: string) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const GpxParser = require("gpxparser").default ?? require("gpxparser")
+  const gpx = new GpxParser()
+  gpx.parse(gpxData)
 
+  if (gpx.tracks.length === 0) return null
+
+  const track = gpx.tracks[0]
+  const positions: [number, number][] = track.points.map(
+    (p: { lat: number; lon: number }) => [p.lat, p.lon] as [number, number]
+  )
+
+  return {
+    positions,
+    distance: track.distance.total / 1000,
+    elevationGain: track.elevation.pos ?? 0,
+    elevationLoss: Math.abs(track.elevation.neg ?? 0),
+  }
+}
+
+export function GpxTrackMap({ gpxData, startLat, startLon, label }: GpxTrackMapProps) {
   useEffect(() => {
     L.Marker.prototype.options.icon = defaultIcon
   }, [])
 
-  useEffect(() => {
-    let cancelled = false
+  const parsed = useMemo(() => parseGpx(gpxData), [gpxData])
 
-    async function loadGpx() {
-      try {
-        const res = await fetch(gpxUrl)
-        if (!res.ok) throw new Error("Impossibile scaricare il file GPX")
-        const text = await res.text()
-
-        const gpxParser = (await import("gpxparser")).default
-        const gpx = new gpxParser()
-        gpx.parse(text)
-
-        if (cancelled) return
-
-        if (gpx.tracks.length === 0) {
-          setError("Nessuna traccia trovata nel file GPX")
-          setLoading(false)
-          return
-        }
-
-        const track = gpx.tracks[0]
-        const pts: [number, number][] = track.points.map(
-          (p: { lat: number; lon: number }) => [p.lat, p.lon] as [number, number]
-        )
-
-        setPositions(pts)
-        setStats({
-          distance: track.distance.total / 1000,
-          elevationGain: track.elevation.pos ?? 0,
-          elevationLoss: Math.abs(track.elevation.neg ?? 0),
-        })
-      } catch (e) {
-        if (!cancelled) {
-          setError(e instanceof Error ? e.message : "Errore nel caricamento GPX")
-        }
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-
-    loadGpx()
-    return () => { cancelled = true }
-  }, [gpxUrl])
-
-  if (loading) {
+  if (!parsed || parsed.positions.length === 0) {
     return (
       <div className="h-[300px] bg-muted rounded-lg flex items-center justify-center text-muted-foreground text-sm">
-        Caricamento traccia GPX...
-      </div>
-    )
-  }
-
-  if (error || positions.length === 0) {
-    return (
-      <div className="h-[300px] bg-muted rounded-lg flex items-center justify-center text-muted-foreground text-sm">
-        {error ?? "Nessuna traccia trovata"}
+        Nessuna traccia trovata nel file GPX
       </div>
     )
   }
@@ -123,22 +82,20 @@ export function GpxTrackMap({ gpxUrl, startLat, startLon, label }: GpxTrackMapPr
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <Polyline
-          positions={positions}
+          positions={parsed.positions}
           pathOptions={{ color: "hsl(var(--primary))", weight: 4, opacity: 0.8 }}
         />
         <Marker position={[startLat, startLon]} icon={defaultIcon}>
           {label && <Popup>{label}</Popup>}
         </Marker>
-        <FitBounds positions={positions} />
+        <FitBounds positions={parsed.positions} />
       </MapContainer>
 
-      {stats && (
-        <div className="flex flex-wrap gap-4 mt-3 text-sm text-muted-foreground">
-          <span>Distanza: <strong className="text-foreground">{stats.distance.toFixed(1)} km</strong></span>
-          <span>Dislivello +: <strong className="text-foreground">{Math.round(stats.elevationGain)} m</strong></span>
-          <span>Dislivello −: <strong className="text-foreground">{Math.round(stats.elevationLoss)} m</strong></span>
-        </div>
-      )}
+      <div className="flex flex-wrap gap-4 mt-3 text-sm text-muted-foreground">
+        <span>Distanza: <strong className="text-foreground">{parsed.distance.toFixed(1)} km</strong></span>
+        <span>Dislivello +: <strong className="text-foreground">{Math.round(parsed.elevationGain)} m</strong></span>
+        <span>Dislivello −: <strong className="text-foreground">{Math.round(parsed.elevationLoss)} m</strong></span>
+      </div>
     </div>
   )
 }

@@ -15,12 +15,12 @@ const GpxTrackMap = dynamic(
 )
 
 interface GpxMapWrapperProps {
-  gpxUrl: string
+  gpxData: string
   startLat: number
   startLon: number
   label?: string
 }
 
-export function GpxMapWrapper({ gpxUrl, startLat, startLon, label }: GpxMapWrapperProps) {
-  return <GpxTrackMap gpxUrl={gpxUrl} startLat={startLat} startLon={startLon} label={label} />
+export function GpxMapWrapper({ gpxData, startLat, startLon, label }: GpxMapWrapperProps) {
+  return <GpxTrackMap gpxData={gpxData} startLat={startLat} startLon={startLon} label={label} />
 }

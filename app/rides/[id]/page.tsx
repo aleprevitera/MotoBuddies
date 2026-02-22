@@ -3,6 +3,7 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { Navbar } from "@/components/layout/Navbar"
 import { MapWrapper } from "@/components/map/MapWrapper"
+import { GpxMapWrapper } from "@/components/map/GpxMapWrapper"
 import { WeatherWidget } from "@/components/weather/WeatherWidget"
 import { RsvpButtons } from "@/components/rides/RsvpButtons"
 import { Badge } from "@/components/ui/badge"
@@ -175,36 +176,39 @@ export default async function RidePage({ params }: { params: Promise<{ id: strin
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <MapPin className="w-4 h-4" />
-                  Punto di ritrovo
+                  {ride.gpx_url ? "Percorso" : "Punto di ritrovo"}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <MapWrapper
-                  lat={ride.start_lat}
-                  lon={ride.start_lon}
-                  label={ride.meeting_point_name ?? "Punto di ritrovo"}
-                />
+                {ride.gpx_url ? (
+                  <GpxMapWrapper
+                    gpxUrl={ride.gpx_url}
+                    startLat={ride.start_lat}
+                    startLon={ride.start_lon}
+                    label={ride.meeting_point_name ?? "Punto di ritrovo"}
+                  />
+                ) : (
+                  <MapWrapper
+                    lat={ride.start_lat}
+                    lon={ride.start_lon}
+                    label={ride.meeting_point_name ?? "Punto di ritrovo"}
+                  />
+                )}
                 <p className="text-xs text-muted-foreground mt-2">
                   Coordinate: {ride.start_lat.toFixed(5)}, {ride.start_lon.toFixed(5)}
                 </p>
-              </CardContent>
-            </Card>
-
-            {/* GPX */}
-            {ride.gpx_url && (
-              <Card>
-                <CardContent className="pt-4">
+                {ride.gpx_url && (
                   <a
                     href={ride.gpx_url}
                     download
-                    className="flex items-center gap-2 text-sm font-medium hover:underline"
+                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mt-2 transition-colors"
                   >
                     <Download className="w-4 h-4" />
                     Scarica traccia GPX
                   </a>
-                </CardContent>
-              </Card>
-            )}
+                )}
+              </CardContent>
+            </Card>
           </div>
 
           {/* Colonna destra (2/5) */}
